@@ -1,0 +1,107 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+our $VERSION = '0.0.2';    # see changelog at the bottom
+
+=head1 What is 'sync-to'?
+
+It's just a simple wrapper for rsync with configuration support.
+
+Config file .sync_to must be located in the directory which will be synced
+
+=head1 Config syntax
+
+remote_host:username_can-be-ommited:remote_path_where_to_sync
+
+=head2 Example
+
+I need to sync files to host testserver1 into the directory /home/testuser/Work/ABC
+
+I'm syncing from host1.
+.sync_to contains(at least) this line:
+
+testserver1:testuser:~/Work/ABC
+
+What actually happens is:
+
+=over 
+
+rsync -h --progress -avz --exclude 'sync-to' --exclude '.sync_to' ./ testuser@testserver1:~/Work/ABC
+
+=back
+
+=head1 Error codes
+
+=over
+
+1   - Missing configuration for 'host'
+
+2   - Missing configuration file .sync_to
+
+3   - Missing 'server' argument
+
+4   - Rsync exit code was not 0 - see output
+
+=back
+=cut
+
+use Cwd qw(abs_path getcwd);
+
+unless ( defined( $ARGV[0] ) ) {
+    print qq(Missing 'server' argument.\n\nUsage:\n$0 server\n\n);
+    exit(3);
+}
+
+my $host               = $ARGV[0];
+my $sync_settings_file = getcwd( abs_path($0) ) . '/.sync_to';
+
+unless ( -f $sync_settings_file ) {
+    print
+        qq(Unable to sync this directory.\nConfiguration file does not exist:\t$sync_settings_file\n);
+    exit(2);
+}
+
+my %sync;
+
+# no, i don't want to use slurp or any other 'slurp' module,
+open my $in, '<:encoding(utf8)', $sync_settings_file;
+while (<$in>) {
+    next if $_ !~ /^\w/;
+    my ( $host, $user, $dir ) = split( ':', $_ );
+    chomp($dir);
+    $sync{$host} = { user => $user, dir => $dir };
+}
+close($in);
+
+unless ( $sync{$host} ) {
+    print
+        qq(Unable to sync to host:\t$host\nConfiguration line was not found in $sync_settings_file\n);
+    exit(1);
+}
+
+my $rsync_user_host
+    = $sync{$host}{user}
+    ? $sync{$host}{user} . '@' . $host
+    : $host;
+
+my $command
+    = qq(rsync -h --progress -avz --exclude '.sync_to' ./ $rsync_user_host:$sync{$host}{dir});
+my $cmd = `$command`;
+if ( $? eq 0 ) { print "sync-to $host $sync{$host}{dir} OK\n"; exit(0); }
+else {
+    print $cmd. "\nRsync exit code was $? - see output for details\n";
+    exit(4);
+}
+
+__END__
+
+## [0.0.2] - 2016-08-20
+### Changed 
+- Removed File::Slurp dependency
+### Added
+- Some POD documentation
+
+## [0.0.1] - 2016-08-19
+### Added
+- Init version <jan@drab.name>
