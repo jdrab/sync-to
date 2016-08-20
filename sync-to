@@ -4,48 +4,6 @@ use strict;
 
 our $VERSION = '0.0.2';    # see changelog at the bottom
 
-=head1 What is 'sync-to'?
-
-It's just a simple wrapper for rsync with configuration support.
-
-Config file .sync_to must be located in the directory which will be synced
-
-=head1 Config syntax
-
-remote_host:username_can-be-ommited:remote_path_where_to_sync
-
-=head2 Example
-
-I need to sync files to host testserver1 into the directory /home/testuser/Work/ABC
-
-I'm syncing from host1.
-.sync_to contains(at least) this line:
-
-testserver1:testuser:~/Work/ABC
-
-What actually happens is:
-
-=over 
-
-rsync -h --progress -avz --exclude 'sync-to' --exclude '.sync_to' ./ testuser@testserver1:~/Work/ABC
-
-=back
-
-=head1 Error codes
-
-=over
-
-1   - Missing configuration for 'host'
-
-2   - Missing configuration file .sync_to
-
-3   - Missing 'server' argument
-
-4   - Rsync exit code was not 0 - see output
-
-=back
-=cut
-
 use Cwd qw(abs_path getcwd);
 
 unless ( defined( $ARGV[0] ) ) {
@@ -96,12 +54,45 @@ else {
 
 __END__
 
-## [0.0.2] - 2016-08-20
-### Changed 
-- Removed File::Slurp dependency
-### Added
-- Some POD documentation
+=head1 What is 'sync-to'?
 
-## [0.0.1] - 2016-08-19
-### Added
-- Init version <jan@drab.name>
+It's just a simple wrapper for rsync with configuration support.
+
+Config file .sync_to must be located in the directory which will be synced
+
+=head1 Config syntax
+
+remote_host:username_can-be-ommited:remote_path_where_to_sync
+
+=head2 Example
+
+I need to sync files to host testserver1 into the directory /home/testuser/Work/ABC
+
+I'm syncing from host1.
+.sync_to contains(at least) this line:
+
+testserver1:testuser:~/Work/ABC
+
+What actually happens is:
+
+=over 
+
+rsync -h --progress -avz --exclude 'sync-to' --exclude '.sync_to' ./ testuser@testserver1:~/Work/ABC
+
+=back
+
+=head1 Error codes
+
+=over
+
+1   - Missing configuration for 'host'
+
+2   - Missing configuration file .sync_to
+
+3   - Missing 'server' argument
+
+4   - Rsync exit code was not 0 - see output
+
+=back
+=cut
+
